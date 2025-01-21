@@ -144,3 +144,7 @@
   .winner {
     animation: rainbow 4s infinite linear;
   }
+  .start-button{
+    background: rgb(168, 191, 255);
+    font-size: 40px;
+  }

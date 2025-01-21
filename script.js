@@ -1,5 +1,8 @@
-const WORD_URL = "https://words.dev-apis.com/word-of-the-day?random=1";
+//for automation stuff
+
+const WORD_URL = "https://words.dev-apis.com/word-of-the-day";
 const VALIDAT_WORD_URL = "https://words.dev-apis.com/validate-word";
+let objToSendToPython = [];
 const spiral = document.querySelector(".spiral");
 let NUMBER_ROUNDS = 6;
 let currentIndex = 0;
@@ -30,12 +33,12 @@ async function start() {
     global[index + indexJump].style.backgroundColor = "yellow";
   }
 
+  // console.log(wordToGet[index])
   function turnGrey(index) {
     global[index + indexJump].style.backgroundColor = "grey";
   }
 
   function handlePlayer(value) {
-
     const letterCounts = {};
     for (let char of wordToGet) {
       letterCounts[char] = (letterCounts[char] || 0) + 1;
@@ -44,6 +47,7 @@ async function start() {
     for (let index = 0; index < wordToGet.length; index++) {
       if (wordToGet[index] === value[index]) {
         turnGreen(index);
+        dataPython(value[index], "G", index);
         letterCounts[value[index]]--;
       }
     }
@@ -51,6 +55,7 @@ async function start() {
     for (let index = 0; index < wordToGet.length; index++) {
       if (wordToGet[index] !== value[index] && letterCounts[value[index]] > 0) {
         turnYellow(index);
+        dataPython(value[index], "Y", index);
         letterCounts[value[index]]--;
       }
     }
@@ -58,6 +63,53 @@ async function start() {
       if (!wordToGet.includes(value[index])) {
         turnGrey(index);
       }
+    }
+  }
+
+  //had fonction hya lighat3tina les donnees lighansifto l code python
+  function dataPython(value, flag, index) {
+    let temp = value + flag;
+    if (flag == "Y") {
+      objToSendToPython.push({ letter: temp, index: index });
+    } else {
+      objToSendToPython.push({ letter: temp, index: index });
+    }
+  }
+
+  function automateSolving() {
+    let result = [];
+    let listWordleWords;
+    fetch("words.txt")
+      .then((response) => response.text())
+      .then((content) => {
+        listWordleWords = content
+          .split("\n")
+          .filter((word) => word.trim() !== "");
+      })
+      console.log(listWordleWords)
+      .catch((error) => {
+        console.error("Error fetching the file:", error);
+      });
+    //TODO : rectify and complete the logic of the automation function
+    
+
+    let satisfies_constraints = true;
+    let possible_solutions = [];
+    for (let index = 0; index < objToSendToPython.length; index++) {
+      for (let word of listWordleWords) {
+        Object.entries(objToSendToPython[index]).map((entry) => {
+          key = entry[0];
+          value = entry[1];
+          if (word.length < value || word[value] !== key) {
+            satisfies_constraints = false;
+            return;
+          }
+        });
+        if (satisfies_constraints) {
+          possible_solutions.push(word);
+        }
+      }
+      console.log(possible_solutions);
     }
   }
 
@@ -87,7 +139,6 @@ async function start() {
           }
         }
       }
-
       if (count == 5) {
         if (event.key == "Enter") {
           const isValid = await validateWord(guessedWord);
@@ -109,6 +160,8 @@ async function start() {
           if (NUMBER_ROUNDS == 0) {
             loser();
           }
+          automateSolving();
+          objToSendToPython = [];
         }
       }
 
@@ -121,7 +174,8 @@ async function start() {
       }
     }
   });
-  //hadi drnaha bach njibo lklma
+
+  // hadi drnaha bach njibo lklma
   const response = await fetch(WORD_URL);
   const data = await response.json();
   wordToGet = data.word.toUpperCase();
